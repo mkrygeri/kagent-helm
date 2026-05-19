@@ -1,0 +1,47 @@
+{{- if and .Values.openshift.enabled .Values.openshift.securityContextConstraints.create }}
+{{- include "kagent.validate" . }}
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: {{ include "kagent.openshiftSccName" . }}
+  labels:
+    {{- include "kagent.labels" . | nindent 4 }}
+  {{- with .Values.openshift.securityContextConstraints.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+allowHostDirVolumePlugin: {{ .Values.openshift.securityContextConstraints.allowHostDirVolumePlugin | default false }}
+allowHostIPC: false
+allowHostNetwork: {{ .Values.openshift.securityContextConstraints.allowHostNetwork | default false }}
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegedContainer: {{ .Values.openshift.securityContextConstraints.allowPrivilegedContainer | default false }}
+allowedCapabilities:
+  {{- toYaml .Values.openshift.securityContextConstraints.allowedCapabilities | nindent 2 }}
+defaultAddCapabilities: []
+fsGroup:
+  type: RunAsAny
+priority: null
+readOnlyRootFilesystem: false
+requiredDropCapabilities: []
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: MustRunAs
+seccompProfiles:
+  - runtime/default
+supplementalGroups:
+  type: RunAsAny
+users:
+  - system:serviceaccount:{{ .Release.Namespace }}:{{ include "kagent.serviceAccountName" . }}
+volumes:
+  - configMap
+  - downwardAPI
+  - emptyDir
+  - persistentVolumeClaim
+  - projected
+  - secret
+  {{- if .Values.openshift.securityContextConstraints.allowHostDirVolumePlugin }}
+  - hostPath
+  {{- end }}
+{{- end }}

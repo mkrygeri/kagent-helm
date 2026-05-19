@@ -60,6 +60,13 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
+Create the name of the OpenShift SecurityContextConstraints to use
+*/}}
+{{- define "kagent.openshiftSccName" -}}
+{{- default (printf "%s-scc" (include "kagent.fullname" .)) .Values.openshift.securityContextConstraints.name | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
 Validate all chart configuration
 */}}
 {{- define "kagent.validate" -}}
@@ -94,6 +101,32 @@ Validate all chart configuration
 {{- end }}
 {{- end }}
 {{- end }}
+{{- end }}
+
+{{/*
+Pod security context with OpenShift restricted SCC compatibility
+*/}}
+{{- define "kagent.podSecurityContext" -}}
+{{- if and .Values.openshift.enabled .Values.openshift.restrictedSecurityContext }}
+{{- $podSecurityContext := omit .Values.podSecurityContext "runAsUser" "runAsGroup" "fsGroup" -}}
+{{- $_ := set $podSecurityContext "seccompProfile" (dict "type" "RuntimeDefault") -}}
+{{- toYaml $podSecurityContext }}
+{{- else }}
+{{- toYaml .Values.podSecurityContext }}
+{{- end }}
+{{- end }}
+
+{{/*
+Container security context with OpenShift restricted SCC compatibility
+*/}}
+{{- define "kagent.securityContext" -}}
+{{- $securityContext := deepCopy .Values.securityContext -}}
+{{- if and .Values.openshift.enabled .Values.openshift.restrictedSecurityContext }}
+{{- $capabilities := deepCopy ($securityContext.capabilities | default dict) -}}
+{{- $_ := unset $capabilities "add" -}}
+{{- $_ := set $securityContext "capabilities" $capabilities -}}
+{{- end }}
+{{- toYaml $securityContext }}
 {{- end }}
 
 {{/*
@@ -148,7 +181,7 @@ Kagent container definition (shared across deployment types)
   {{- end }}
   {{- include "kagent.volumeMounts" . | nindent 2 }}
   securityContext:
-    {{- toYaml .Values.securityContext | nindent 4 }}
+    {{- include "kagent.securityContext" . | nindent 4 }}
   resources:
     {{- toYaml .Values.resources | nindent 4 }}
   {{- if $lp.enabled }}
@@ -185,7 +218,7 @@ imagePullSecrets:
 {{- end }}
 serviceAccountName: {{ include "kagent.serviceAccountName" . }}
 securityContext:
-  {{- toYaml .Values.podSecurityContext | nindent 2 }}
+  {{- include "kagent.podSecurityContext" . | nindent 2 }}
 containers:
 {{- include "kagent.container" . | nindent 0 }}
 {{- with .Values.nodeSelector }}

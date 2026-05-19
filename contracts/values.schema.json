@@ -9,7 +9,7 @@
       "type": "string",
       "enum": ["statefulset", "daemonset"],
       "default": "statefulset",
-      "description": "Kubernetes workload type for agent deployment"
+      "description": "Kubernetes workload type for agent deployment. Use openshift.enabled=true for OpenShift-specific rendering."
     },
     "replicaCount": {
       "type": "integer",
@@ -234,6 +234,11 @@
               "type": "array",
               "items": {"type": "string"},
               "default": ["ALL"]
+            },
+            "add": {
+              "type": "array",
+              "items": {"type": "string"},
+              "default": ["NET_RAW"]
             }
           }
         },
@@ -255,6 +260,61 @@
           "properties": {
             "cpu": {"type": "string", "default": "500m"},
             "memory": {"type": "string", "default": "512Mi"}
+          }
+        }
+      }
+    },
+    "openshift": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable OpenShift-specific rendering behavior"
+        },
+        "restrictedSecurityContext": {
+          "type": "boolean",
+          "default": true,
+          "description": "Omit fixed UID/GID fields and added Linux capabilities for compatibility with OpenShift restricted-v2 SCC"
+        },
+        "securityContextConstraints": {
+          "type": "object",
+          "properties": {
+            "create": {
+              "type": "boolean",
+              "default": false,
+              "description": "Create a custom OpenShift SecurityContextConstraints resource"
+            },
+            "name": {
+              "type": "string",
+              "description": "Name of the SecurityContextConstraints resource (generated if empty)"
+            },
+            "annotations": {
+              "type": "object",
+              "additionalProperties": {"type": "string"},
+              "description": "Annotations for the SecurityContextConstraints resource"
+            },
+            "allowHostDirVolumePlugin": {
+              "type": "boolean",
+              "default": false,
+              "description": "Allow hostPath volumes in the custom SCC"
+            },
+            "allowHostNetwork": {
+              "type": "boolean",
+              "default": false,
+              "description": "Allow hostNetwork in the custom SCC"
+            },
+            "allowPrivilegedContainer": {
+              "type": "boolean",
+              "default": false,
+              "description": "Allow privileged containers in the custom SCC"
+            },
+            "allowedCapabilities": {
+              "type": "array",
+              "items": {"type": "string"},
+              "default": ["NET_RAW"],
+              "description": "Linux capabilities allowed by the custom SCC"
+            }
           }
         }
       }

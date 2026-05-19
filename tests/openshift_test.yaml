@@ -1,0 +1,51 @@
+suite: OpenShift tests
+templates:
+  - statefulset.yaml
+  - openshift-scc.yaml
+set:
+  kagent.companyId: "12345"
+  openshift.enabled: true
+
+tests:
+  - it: should render OpenShift restricted-compatible security contexts
+    template: statefulset.yaml
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - isNull:
+          path: spec.template.spec.securityContext.runAsUser
+      - isNull:
+          path: spec.template.spec.securityContext.fsGroup
+      - equal:
+          path: spec.template.spec.securityContext.seccompProfile.type
+          value: RuntimeDefault
+      - isNull:
+          path: spec.template.spec.containers[0].securityContext.capabilities.add
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.capabilities.drop[0]
+          value: ALL
+
+  - it: should not render SecurityContextConstraints by default
+    template: openshift-scc.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render SecurityContextConstraints when explicitly enabled
+    template: openshift-scc.yaml
+    set:
+      openshift.restrictedSecurityContext: false
+      openshift.securityContextConstraints.create: true
+      openshift.securityContextConstraints.allowHostDirVolumePlugin: true
+    asserts:
+      - isKind:
+          of: SecurityContextConstraints
+      - equal:
+          path: allowHostDirVolumePlugin
+          value: true
+      - contains:
+          path: allowedCapabilities
+          content: NET_RAW
+      - contains:
+          path: users
+          content: system:serviceaccount:NAMESPACE:RELEASE-NAME-kagent

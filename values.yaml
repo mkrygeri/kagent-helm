@@ -21,6 +21,11 @@
 #   - Automatically scales with cluster node count
 #   - Typically uses hostPath volumes for local node storage
 #
+# OpenShift:
+#   - Use statefulset or daemonset with openshift.enabled=true
+#   - Defaults to OpenShift restricted-v2 compatible pod/container security contexts
+#   - Optional custom SecurityContextConstraints can be created for NET_RAW or hostPath use cases
+#
 deploymentType: statefulset
 
 # Number of replicas (StatefulSet patterns only)
@@ -73,6 +78,30 @@ serviceAccount:
 # RBAC configuration (if kagent needs Kubernetes API access)
 rbac:
   create: false
+
+# OpenShift configuration
+openshift:
+  # Enable OpenShift-specific rendering behavior.
+  # When enabled with restrictedSecurityContext=true, the chart omits fixed UID/GID
+  # fields and extra Linux capabilities so OpenShift can assign values via SCC.
+  enabled: false
+
+  # Keep enabled for the default OpenShift restricted-v2 SCC.
+  # Disable only when binding the service account to an SCC that permits the chart's
+  # configured podSecurityContext and securityContext values.
+  restrictedSecurityContext: true
+
+  # Optional custom SecurityContextConstraints for deployments that need capabilities
+  # such as NET_RAW or hostPath volumes. Creating SCCs requires cluster-admin rights.
+  securityContextConstraints:
+    create: false
+    name: ""
+    annotations: {}
+    allowHostDirVolumePlugin: false
+    allowHostNetwork: false
+    allowPrivilegedContainer: false
+    allowedCapabilities:
+      - NET_RAW
 
 # Network policy configuration (opt-in, disabled by default for compatibility)
 # Configure according to organizational policies

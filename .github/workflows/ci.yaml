@@ -65,6 +65,10 @@ jobs:
             args: "--set-string kagent.companyId=test-company --set deploymentType=daemonset --set persistence.type=hostPath --set persistence.keypair.type=hostPath"
           - name: daemonset-no-probes
             args: "--set-string kagent.companyId=test-company --set deploymentType=daemonset --set persistence.type=hostPath --set persistence.keypair.type=hostPath --set livenessProbe=null --set readinessProbe=null"
+          - name: openshift-statefulset
+            args: "--set-string kagent.companyId=test-company --set openshift.enabled=true"
+          - name: openshift-custom-scc
+            args: "--set-string kagent.companyId=test-company --set openshift.enabled=true --set openshift.restrictedSecurityContext=false --set openshift.securityContextConstraints.create=true"
     steps:
       - uses: actions/checkout@v4
 

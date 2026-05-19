@@ -1,6 +1,6 @@
 # Kagent Helm Chart
 
-A Helm chart for deploying Kentik Universal Agent (kagent) with support for multiple deployment patterns: StatefulSet and DaemonSet.
+A Helm chart for deploying Kentik Universal Agent (kagent) with support for multiple deployment patterns: StatefulSet and DaemonSet. OpenShift-specific deployment support is available with `openshift.enabled=true`.
 
 ## Prerequisites
 
@@ -122,6 +122,18 @@ kubectl get pods -l app.kubernetes.io/name=kagent --no-headers | wc -l
 kubectl get pods -l app.kubernetes.io/name=kagent -o wide
 ```
 
+### OpenShift
+
+OpenShift deployments use the existing StatefulSet or DaemonSet patterns with OpenShift-specific security-context rendering enabled:
+
+```bash
+helm install kagent . \
+  --set-string kagent.companyId=YOUR_COMPANY_ID \
+  --set openshift.enabled=true
+```
+
+See the dedicated [OpenShift deployment guide](docs/openshift.md) for restricted SCC deployments, optional custom SCC creation, and DaemonSet hostPath guidance.
+
 ## Configuration
 
 ### Kagent Settings
@@ -186,6 +198,19 @@ kubectl get pods -l app.kubernetes.io/name=kagent -o wide
 | `serviceAccount.create` | Create service account | `true` |
 | `rbac.create` | Create RBAC resources | `false` |
 | `networkPolicy.enabled` | Enable network policy | `false` |
+
+### OpenShift
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `openshift.enabled` | Enable OpenShift-specific rendering behavior | `false` |
+| `openshift.restrictedSecurityContext` | Omit fixed UID/GID fields and added capabilities for restricted-v2 SCC compatibility | `true` |
+| `openshift.securityContextConstraints.create` | Create a custom OpenShift SecurityContextConstraints resource | `false` |
+| `openshift.securityContextConstraints.name` | Custom SCC name (empty = generated) | `""` |
+| `openshift.securityContextConstraints.allowHostDirVolumePlugin` | Allow hostPath volumes in the custom SCC | `false` |
+| `openshift.securityContextConstraints.allowHostNetwork` | Allow host networking in the custom SCC | `false` |
+| `openshift.securityContextConstraints.allowPrivilegedContainer` | Allow privileged containers in the custom SCC | `false` |
+| `openshift.securityContextConstraints.allowedCapabilities` | Linux capabilities allowed by the custom SCC | `[NET_RAW]` |
 
 ## Cloud-Specific Examples
 
@@ -869,6 +894,9 @@ helm template kagent . --set deploymentType=statefulset
 
 # Render DaemonSet pattern
 helm template kagent . --set deploymentType=daemonset
+
+# Render OpenShift-compatible StatefulSet pattern
+helm template kagent . --set-string kagent.companyId=test-company --set openshift.enabled=true
 ```
 
 ### Testing
