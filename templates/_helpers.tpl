@@ -135,6 +135,9 @@ Kagent container definition (shared across deployment types)
 {{- define "kagent.container" -}}
 {{- $lp := .Values.livenessProbe | default dict }}
 {{- $rp := .Values.readinessProbe | default dict }}
+{{- $hc := .Values.kagent.healthCheck | default dict }}
+{{- $healthEnabled := or $hc.enabled $lp.enabled $rp.enabled .Values.service.enabled }}
+{{- $healthPort := (($lp.httpGet | default dict).port | default ($rp.httpGet | default dict).port | default $hc.port | default 8099 | int) }}
 - name: kagent
   image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
   imagePullPolicy: {{ .Values.image.pullPolicy }}
@@ -158,13 +161,13 @@ Kagent container definition (shared across deployment types)
   - name: K_K8S_HELM
     value: "true"
   # Health check server configuration (auto-enabled when probes are enabled)
-  {{- if or $lp.enabled $rp.enabled }}
+  {{- if $healthEnabled }}
   - name: K_HC_SERVER_ENABLED
     value: "true"
   - name: K_HC_SERVER_NETWORK
-    value: "tcp4"
+    value: {{ $hc.network | default "tcp4" | quote }}
   - name: K_HC_SERVER_ADDRESS
-    value: {{ printf ":%d" (($lp.httpGet | default dict).port | default ($rp.httpGet | default dict).port | default 8099 | int) | quote }}
+    value: {{ $hc.address | default (printf ":%d" $healthPort) | quote }}
   {{- end }}
   # Disk space reservation
   - name: K_DISK_SPACE_RESERVATION_ENABLED
@@ -180,6 +183,17 @@ Kagent container definition (shared across deployment types)
       name: {{ include "kagent.fullname" . }}-config
   {{- end }}
   {{- include "kagent.volumeMounts" . | nindent 2 }}
+  {{- if or $healthEnabled .Values.extraContainerPorts }}
+  ports:
+  {{- if $healthEnabled }}
+  - name: health
+    containerPort: {{ $healthPort }}
+    protocol: TCP
+  {{- end }}
+  {{- with .Values.extraContainerPorts }}
+    {{- toYaml . | nindent 2 }}
+  {{- end }}
+  {{- end }}
   securityContext:
     {{- include "kagent.securityContext" . | nindent 4 }}
   resources:

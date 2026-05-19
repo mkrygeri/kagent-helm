@@ -1,0 +1,33 @@
+deploymentType: daemonset
+
+kagent:
+  companyId: 1111111
+  healthCheck:
+    enabled: true
+    port: 8099
+
+extraContainerPorts:
+  - name: netflow
+    containerPort: 9995
+    protocol: UDP
+
+service:
+  enabled: true
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  ports:
+    - name: health
+      port: 8099
+      targetPort: health
+      protocol: TCP
+    - name: netflow
+      port: 9995
+      targetPort: netflow
+      protocol: UDP
+
+persistence:
+  enabled: true
+  type: hostPath
+  keypair:
+    enabled: true
+    type: hostPath

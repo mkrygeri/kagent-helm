@@ -69,6 +69,8 @@ jobs:
             args: "--set-string kagent.companyId=test-company --set openshift.enabled=true"
           - name: openshift-custom-scc
             args: "--set-string kagent.companyId=test-company --set openshift.enabled=true --set openshift.restrictedSecurityContext=false --set openshift.securityContextConstraints.create=true"
+          - name: kproxy-loadbalancer
+            args: "-f docs/kproxy-loadbalancer-values.yaml --set-string kagent.companyId=test-company"
     steps:
       - uses: actions/checkout@v4
 

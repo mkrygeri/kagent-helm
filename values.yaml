@@ -69,6 +69,15 @@ kagent:
   # Kentik API endpoint
   apiEndpoint: "grpc.api.kentik.com:443"
 
+  # Health check server configuration.
+  # Enable this when an external load balancer needs a TCP/HTTP health endpoint
+  # on each kagent pod, such as kproxy UDP intake deployments.
+  healthCheck:
+    enabled: false               # K_HC_SERVER_ENABLED
+    network: tcp4                # K_HC_SERVER_NETWORK
+    port: 8099
+    address: ""                 # K_HC_SERVER_ADDRESS; empty renders as :<port>
+
 # Service account configuration
 serviceAccount:
   create: true
@@ -168,6 +177,30 @@ resources:
   limits:
     cpu: 2
     memory: 4096Mi
+
+# Extra container ports to expose on the kagent container.
+# The health check port is added automatically when kagent.healthCheck or probes are enabled.
+extraContainerPorts: []
+  # - name: netflow
+  #   containerPort: 9995
+  #   protocol: UDP
+
+# Service configuration for exposing kagent traffic inside or outside the cluster.
+# This is disabled by default because most kagent deployments only need outbound HTTPS.
+# Enable it for kproxy UDP intake or external load balancer health checks.
+service:
+  enabled: false
+  type: ClusterIP
+  annotations: {}
+  labels: {}
+  externalTrafficPolicy: ""
+  loadBalancerIP: ""
+  loadBalancerSourceRanges: []
+  ports:
+    - name: health
+      port: 8099
+      targetPort: health
+      protocol: TCP
 
 # Node selector
 nodeSelector: {}

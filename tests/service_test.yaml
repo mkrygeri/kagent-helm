@@ -1,0 +1,108 @@
+suite: Service tests
+templates:
+  - service.yaml
+  - daemonset.yaml
+set:
+  kagent.companyId: "12345"
+
+tests:
+  - it: should not render Service when disabled by default
+    template: service.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render LoadBalancer service with TCP health and UDP intake ports
+    template: service.yaml
+    set:
+      service.enabled: true
+      service.type: LoadBalancer
+      service.externalTrafficPolicy: Local
+      service.ports:
+        - name: health
+          port: 8099
+          targetPort: health
+          protocol: TCP
+        - name: netflow
+          port: 9995
+          targetPort: netflow
+          protocol: UDP
+    asserts:
+      - isKind:
+          of: Service
+      - equal:
+          path: spec.type
+          value: LoadBalancer
+      - equal:
+          path: spec.externalTrafficPolicy
+          value: Local
+      - contains:
+          path: spec.ports
+          content:
+            name: health
+            port: 8099
+            targetPort: health
+            protocol: TCP
+      - contains:
+          path: spec.ports
+          content:
+            name: netflow
+            port: 9995
+            targetPort: netflow
+            protocol: UDP
+
+  - it: should expose health and UDP container ports for kproxy load balancer use
+    template: daemonset.yaml
+    set:
+      deploymentType: daemonset
+      persistence.type: hostPath
+      persistence.keypair.type: hostPath
+      kagent.healthCheck.enabled: true
+      kagent.healthCheck.port: 8099
+      extraContainerPorts:
+        - name: netflow
+          containerPort: 9995
+          protocol: UDP
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: K_HC_SERVER_ENABLED
+            value: "true"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: K_HC_SERVER_ADDRESS
+            value: ":8099"
+      - contains:
+          path: spec.template.spec.containers[0].ports
+          content:
+            name: health
+            containerPort: 8099
+            protocol: TCP
+      - contains:
+          path: spec.template.spec.containers[0].ports
+          content:
+            name: netflow
+            containerPort: 9995
+            protocol: UDP
+
+  - it: should enable the default health server when service is enabled
+    template: daemonset.yaml
+    set:
+      deploymentType: daemonset
+      persistence.type: hostPath
+      persistence.keypair.type: hostPath
+      service.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: K_HC_SERVER_ENABLED
+            value: "true"
+      - contains:
+          path: spec.template.spec.containers[0].ports
+          content:
+            name: health
+            containerPort: 8099
+            protocol: TCP

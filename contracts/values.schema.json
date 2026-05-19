@@ -78,8 +78,13 @@
             },
             "address": {
               "type": "string",
-              "default": ":8099",
-              "description": "Listen address for health server (K_HC_SERVER_ADDRESS)"
+              "default": "",
+              "description": "Listen address for health server (K_HC_SERVER_ADDRESS). Empty renders as :<port>."
+            },
+            "port": {
+              "type": "integer",
+              "default": 8099,
+              "description": "Health check server port used by container ports and services"
             }
           }
         },
@@ -264,6 +269,23 @@
         }
       }
     },
+    "extraContainerPorts": {
+      "type": "array",
+      "description": "Additional container ports to expose on the kagent container",
+      "items": {
+        "type": "object",
+        "required": ["name", "containerPort"],
+        "properties": {
+          "name": {"type": "string"},
+          "containerPort": {"type": "integer"},
+          "protocol": {
+            "type": "string",
+            "enum": ["TCP", "UDP", "SCTP"],
+            "default": "TCP"
+          }
+        }
+      }
+    },
     "openshift": {
       "type": "object",
       "properties": {
@@ -425,9 +447,56 @@
           "enum": ["ClusterIP", "NodePort", "LoadBalancer"],
           "default": "ClusterIP"
         },
-        "port": {
-          "type": "integer",
-          "default": 8080
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {"type": "string"},
+          "description": "Annotations for the Service resource"
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {"type": "string"},
+          "description": "Additional labels for the Service resource"
+        },
+        "externalTrafficPolicy": {
+          "type": "string",
+          "enum": ["", "Cluster", "Local"],
+          "default": "",
+          "description": "External traffic policy for NodePort or LoadBalancer services"
+        },
+        "loadBalancerIP": {
+          "type": "string",
+          "default": "",
+          "description": "Static load balancer IP, when supported by the platform"
+        },
+        "loadBalancerSourceRanges": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "CIDR ranges allowed to access the load balancer"
+        },
+        "ports": {
+          "type": "array",
+          "description": "Service ports, including UDP intake ports and TCP health checks",
+          "items": {
+            "type": "object",
+            "required": ["name", "port", "targetPort"],
+            "properties": {
+              "name": {"type": "string"},
+              "port": {"type": "integer"},
+              "targetPort": {
+                "oneOf": [
+                  {"type": "string"},
+                  {"type": "integer"}
+                ]
+              },
+              "protocol": {
+                "type": "string",
+                "enum": ["TCP", "UDP", "SCTP"],
+                "default": "TCP"
+              },
+              "nodePort": {"type": "integer"},
+              "appProtocol": {"type": "string"}
+            }
+          }
         }
       }
     }

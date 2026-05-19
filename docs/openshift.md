@@ -109,6 +109,46 @@ persistence:
     type: hostPath
 ```
 
+## External Load Balancers And kproxy
+
+For standard kagent deployments, pods generally only need outbound HTTPS access to Kentik. kproxy-style deployments also need inbound UDP telemetry from network devices, plus a TCP health check that the external load balancer can probe on each kagent endpoint.
+
+OpenShift Routes are not a fit for UDP telemetry. Use a Service `type: LoadBalancer`, `NodePort`, or your platform's load balancer integration.
+
+```yaml
+deploymentType: daemonset
+
+openshift:
+  enabled: true
+
+kagent:
+  companyId: YOUR_COMPANY_ID
+  healthCheck:
+    enabled: true
+    port: 8099
+
+extraContainerPorts:
+  - name: netflow
+    containerPort: 9995
+    protocol: UDP
+
+service:
+  enabled: true
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  ports:
+    - name: health
+      port: 8099
+      targetPort: health
+      protocol: TCP
+    - name: netflow
+      port: 9995
+      targetPort: netflow
+      protocol: UDP
+```
+
+For DaemonSet intake, `externalTrafficPolicy: Local` is usually preferred because it keeps load-balanced traffic on nodes running a local kagent pod and can preserve source IP information when the platform supports it. Some load balancer implementations have limitations around mixed TCP and UDP listeners on the same Service; if that applies in your environment, create separate Services using the same selector, one for UDP intake and one for TCP health checks.
+
 ## Uninstall
 
 ```bash
