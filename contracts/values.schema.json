@@ -38,6 +38,21 @@
         }
       }
     },
+    "nameOverride": {
+      "type": "string",
+      "default": "",
+      "description": "Override the chart name portion of generated resource names"
+    },
+    "fullnameOverride": {
+      "type": "string",
+      "default": "",
+      "description": "Fully override the generated resource name"
+    },
+    "imagePullSecrets": {
+      "type": "array",
+      "items": {"type": "object"},
+      "description": "Image pull secrets for private registries"
+    },
     "kagent": {
       "type": "object",
       "required": ["companyId"],
@@ -47,9 +62,16 @@
           "minLength": 1,
           "description": "Kentik company identifier for agent scoping (REQUIRED)"
         },
-        "agentId": {
+        "apiEndpoint": {
           "type": "string",
-          "description": "Agent ID from CreateAgent API for Terraform tracking (optional)"
+          "default": "grpc.api.kentik.com:443",
+          "description": "Kentik API gRPC endpoint (maps to K_API_ROOT)"
+        },
+        "logLevel": {
+          "type": "string",
+          "enum": ["debug", "info", "warn", "error"],
+          "default": "info",
+          "description": "Logging verbosity level (K_LOG_LEVEL)"
         },
         "releaseChannel": {
           "type": "string",
@@ -104,77 +126,6 @@
             }
           }
         },
-        "config": {
-          "type": "object",
-          "properties": {
-            "apiEndpoint": {
-              "type": "string",
-              "default": "grpc.api.kentik.com:443",
-              "description": "Kentik API gRPC endpoint (maps to K_API_ROOT)"
-            },
-            "logLevel": {
-              "type": "string",
-              "enum": ["debug", "info", "warn", "error"],
-              "default": "info",
-              "description": "Logging verbosity level (K_LOG_LEVEL)"
-            },
-            "logFormat": {
-              "type": "string",
-              "enum": ["json", "text"],
-              "default": "json",
-              "description": "Log format (deprecated: agent infers from internal settings)",
-              "deprecated": true
-            },
-            "buffer": {
-              "type": "object",
-              "deprecated": true,
-              "description": "Deprecated: These fields are not used by the agent",
-              "properties": {
-                "maxSize": {
-                  "type": "string",
-                  "default": "1Gi"
-                },
-                "retentionHours": {
-                  "type": "integer",
-                  "default": 24
-                }
-              }
-            },
-            "retry": {
-              "type": "object",
-              "deprecated": true,
-              "description": "Deprecated: These fields are not used by the agent",
-              "properties": {
-                "initialDelaySeconds": {
-                  "type": "integer",
-                  "default": 5
-                },
-                "maxDelaySeconds": {
-                  "type": "integer",
-                  "default": 300
-                },
-                "multiplier": {
-                  "type": "number",
-                  "default": 2.0
-                }
-              }
-            }
-          }
-        },
-        "byok": {
-          "type": "object",
-          "properties": {
-            "enabled": {
-              "type": "boolean",
-              "default": false,
-              "description": "Enable Bring Your Own Key mode"
-            },
-            "existingSecret": {
-              "type": "string",
-              "description": "Name of Secret containing pre-generated keypair (required if enabled)"
-            }
-          }
-        }
       }
     },
     "serviceAccount": {
@@ -224,8 +175,8 @@
       "type": "object",
       "properties": {
         "runAsNonRoot": {"type": "boolean", "default": true},
-        "runAsUser": {"type": "integer", "default": 1000},
-        "fsGroup": {"type": "integer", "default": 1000}
+        "runAsUser": {"type": "integer", "default": 500},
+        "fsGroup": {"type": "integer", "default": 500}
       }
     },
     "securityContext": {
@@ -256,15 +207,15 @@
         "requests": {
           "type": "object",
           "properties": {
-            "cpu": {"type": "string", "default": "100m"},
-            "memory": {"type": "string", "default": "128Mi"}
+            "cpu": {"type": "string", "default": "1"},
+            "memory": {"type": "string", "default": "1024Mi"}
           }
         },
         "limits": {
           "type": "object",
           "properties": {
-            "cpu": {"type": "string", "default": "500m"},
-            "memory": {"type": "string", "default": "512Mi"}
+            "cpu": {"type": "string", "default": "2"},
+            "memory": {"type": "string", "default": "4096Mi"}
           }
         }
       }
@@ -388,32 +339,62 @@
         "enabled": {
           "type": "boolean",
           "default": true,
-          "description": "Enable persistent volumes (for StatefulSet)"
+          "description": "Enable persistent volumes"
         },
-        "storageClass": {
+        "type": {
           "type": "string",
-          "description": "Storage class name (empty = cluster default)"
+          "enum": ["pvc", "hostPath", "emptyDir"],
+          "default": "pvc",
+          "description": "Volume type: pvc (StatefulSet), hostPath or emptyDir (DaemonSet)"
         },
-        "size": {
-          "type": "string",
-          "default": "10Gi",
-          "description": "Volume size for application data"
+        "pvc": {
+          "type": "object",
+          "description": "PVC configuration (when type: pvc)",
+          "properties": {
+            "storageClass": {"type": "string", "default": "", "description": "Storage class name (empty = cluster default)"},
+            "size": {"type": "string", "default": "10Gi"},
+            "accessModes": {"type": "array", "items": {"type": "string"}, "default": ["ReadWriteOnce"]}
+          }
         },
-        "accessModes": {
-          "type": "array",
-          "items": {"type": "string"},
-          "default": ["ReadWriteOnce"]
+        "hostPath": {
+          "type": "object",
+          "description": "HostPath configuration (when type: hostPath)",
+          "properties": {
+            "path": {"type": "string", "default": "/var/lib/kagent/data"},
+            "type": {"type": "string", "default": "DirectoryOrCreate"}
+          }
         },
         "keypair": {
           "type": "object",
           "properties": {
             "enabled": {"type": "boolean", "default": true},
-            "storageClass": {"type": "string"},
-            "size": {"type": "string", "default": "100Mi"},
-            "accessModes": {
-              "type": "array",
-              "items": {"type": "string"},
-              "default": ["ReadWriteOnce"]
+            "type": {
+              "type": "string",
+              "enum": ["secret", "pvc", "hostPath", "emptyDir"],
+              "default": "secret",
+              "description": "Keypair storage type"
+            },
+            "pvc": {
+              "type": "object",
+              "properties": {
+                "storageClass": {"type": "string", "default": ""},
+                "size": {"type": "string", "default": "100Mi"},
+                "accessModes": {"type": "array", "items": {"type": "string"}, "default": ["ReadWriteOnce"]}
+              }
+            },
+            "hostPath": {
+              "type": "object",
+              "properties": {
+                "path": {"type": "string", "default": "/var/lib/kagent/keys"},
+                "type": {"type": "string", "default": "DirectoryOrCreate"}
+              }
+            },
+            "secret": {
+              "type": "object",
+              "description": "Secret configuration (when type: secret)",
+              "properties": {
+                "name": {"type": "string", "default": "", "description": "Secret name prefix (pod index appended automatically)"}
+              }
             }
           }
         }

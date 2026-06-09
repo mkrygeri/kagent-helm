@@ -30,3 +30,21 @@ spec:
   ports:
     {{- toYaml .Values.service.ports | nindent 4 }}
 {{- end }}
+{{- if eq .Values.deploymentType "statefulset" }}
+---
+# Headless service required by the StatefulSet as its governing service.
+# Enables stable DNS entries (<pod>.<svc>.<namespace>.svc.cluster.local) for peer discovery.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "kagent.fullname" . }}-headless
+  labels:
+    {{- include "kagent.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    {{- include "kagent.selectorLabels" . | nindent 4 }}
+  ports:
+    {{- toYaml .Values.service.ports | nindent 4 }}
+{{- end }}

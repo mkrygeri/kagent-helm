@@ -6,8 +6,12 @@ set:
   kagent.companyId: "12345"
 
 tests:
-  - it: should not render Service when disabled by default
+  - it: should not render Service when disabled by default for daemonset
     template: service.yaml
+    set:
+      deploymentType: daemonset
+      persistence.type: hostPath
+      persistence.keypair.type: hostPath
     asserts:
       - hasDocuments:
           count: 0
@@ -15,6 +19,9 @@ tests:
   - it: should render LoadBalancer service with TCP health and UDP intake ports
     template: service.yaml
     set:
+      deploymentType: daemonset
+      persistence.type: hostPath
+      persistence.keypair.type: hostPath
       service.enabled: true
       service.type: LoadBalancer
       service.externalTrafficPolicy: Local
@@ -106,3 +113,43 @@ tests:
             name: health
             containerPort: 8099
             protocol: TCP
+
+  - it: should render headless service for statefulset
+    template: service.yaml
+    set:
+      deploymentType: statefulset
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Service
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-kagent-headless
+      - equal:
+          path: spec.type
+          value: ClusterIP
+      - equal:
+          path: spec.clusterIP
+          value: None
+
+  - it: should render both headless and user-facing service for statefulset when service is enabled
+    template: service.yaml
+    set:
+      deploymentType: statefulset
+      service.enabled: true
+      service.type: ClusterIP
+    asserts:
+      - hasDocuments:
+          count: 2
+      - isKind:
+          of: Service
+        documentIndex: 0
+      - equal:
+          path: spec.type
+          value: ClusterIP
+        documentIndex: 0
+      - equal:
+          path: spec.clusterIP
+          value: None
+        documentIndex: 1
