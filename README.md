@@ -19,7 +19,8 @@ cd kagent-helm
 
 # Install with StatefulSet pattern (persistent storage)
 helm install kagent . \
-  --set-string kagent.companyId=YOUR_COMPANY_ID
+  --set-string kagent.companyId=YOUR_COMPANY_ID \
+  --set-string kagent.provisioningToken=YOUR_PROVISIONING_TOKEN
 ```
 
 Alternatively, install directly from the GitHub repository without cloning:
@@ -27,11 +28,13 @@ Alternatively, install directly from the GitHub repository without cloning:
 ```bash
 # Install with StatefulSet pattern
 helm install kagent oci://ghcr.io/kentik/kagent-helm \
-  --set-string kagent.companyId=YOUR_COMPANY_ID
+  --set-string kagent.companyId=YOUR_COMPANY_ID \
+  --set-string kagent.provisioningToken=YOUR_PROVISIONING_TOKEN
 
 # Or from a specific version/tag
 helm install kagent https://github.com/kentik/kagent-helm/archive/refs/heads/main.tar.gz \
-  --set-string kagent.companyId=YOUR_COMPANY_ID
+  --set-string kagent.companyId=YOUR_COMPANY_ID \
+  --set-string kagent.provisioningToken=YOUR_PROVISIONING_TOKEN
 ```
 
 ### 2. Verify Installation
@@ -128,7 +131,8 @@ kubectl get pods -l app.kubernetes.io/name=kagent -o wide
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `kagent.companyId` | Company ID for agent registration | `1013` |
+| `kagent.companyId` | Company ID for agent registration (REQUIRED) | `""` |
+| `kagent.provisioningToken` | Provisioning token for agent registration (REQUIRED; stored in a Kubernetes Secret and injected via `secretKeyRef`) | `""` |
 | `kagent.agentId` | Agent ID for Terraform tracking | `""` |
 | `kagent.releaseChannel` | Release channel (stable, beta, dev) | `stable` |
 | `kagent.diskReservation.enabled` | Enable disk space reservation | `true` |
@@ -832,20 +836,47 @@ Upgrades within the same deployment pattern are supported:
 
 ```bash
 # Upgrade StatefulSet pattern
-helm upgrade kagent . --set replicaCount=3
+helm upgrade kagent . \
+  --set-string kagent.companyId=YOUR_COMPANY_ID \
+  --set-string kagent.provisioningToken=YOUR_PROVISIONING_TOKEN \
+  --set replicaCount=3
 
 # Upgrade with new image version
-helm upgrade kagent . --set image.tag=v4.2.0
+helm upgrade kagent . \
+  --set-string kagent.companyId=YOUR_COMPANY_ID \
+  --set-string kagent.provisioningToken=YOUR_PROVISIONING_TOKEN \
+  --set image.tag=v4.2.0
 ```
 
 ### Changing Configuration
 
 ```bash
 # Update log level
-helm upgrade kagent . --set kagent.logLevel=debug
+helm upgrade kagent . \
+  --set-string kagent.companyId=YOUR_COMPANY_ID \
+  --set-string kagent.provisioningToken=YOUR_PROVISIONING_TOKEN \
+  --set kagent.logLevel=debug
 
 # Update release channel
-helm upgrade kagent . --set kagent.releaseChannel=beta
+helm upgrade kagent . \
+  --set-string kagent.companyId=YOUR_COMPANY_ID \
+  --set-string kagent.provisioningToken=YOUR_PROVISIONING_TOKEN \
+  --set kagent.releaseChannel=beta
+```
+
+### Refreshing an Expired Provisioning Token
+
+If the provisioning token expires, upgrade with the new token and restart pods:
+
+```bash
+helm upgrade kagent . \
+  --set-string kagent.companyId=YOUR_COMPANY_ID \
+  --set-string kagent.provisioningToken=NEW_REFRESHED_TOKEN
+
+# Pods must be restarted to pick up the new token value
+kubectl rollout restart statefulset/kagent
+# or for daemonset:
+kubectl rollout restart daemonset/kagent
 ```
 
 ## Values Schema
@@ -865,17 +896,25 @@ helm lint .
 ```bash
 
 # Render StatefulSet pattern
-helm template kagent . --set deploymentType=statefulset
+helm template kagent . \
+  --set-string kagent.companyId=123 \
+  --set-string kagent.provisioningToken=tok \
+  --set deploymentType=statefulset
 
 # Render DaemonSet pattern
-helm template kagent . --set deploymentType=daemonset
+helm template kagent . \
+  --set-string kagent.companyId=123 \
+  --set-string kagent.provisioningToken=tok \
+  --set deploymentType=daemonset
 ```
 
 ### Testing
 
 ```bash
 # Dry run install
-helm install kagent . --dry-run --debug
+helm install kagent . --dry-run --debug \
+  --set-string kagent.companyId=123 \
+  --set-string kagent.provisioningToken=tok
 ```
 
 ## Support

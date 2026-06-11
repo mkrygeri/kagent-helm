@@ -31,7 +31,7 @@ replicaCount: 1
 image:
   repository: kentik/kagent
   pullPolicy: IfNotPresent
-  tag: v5.0.3
+  tag: v5.0.19
 
 imagePullSecrets: []
 nameOverride: ""
@@ -43,6 +43,10 @@ kagent:
   # Company ID for agent registration
   # Maps to env K_COMPANY_ID
   companyId: ""
+
+  # Provisioning token for agent registration
+  # Maps to env K_REGISTER_PROVISIONING_TOKEN (injected via Secret)
+  provisioningToken: ""
 
   # Release channel for agent binary updates (stable, beta, dev)
   # Maps to env K_RELEASE_CHANNEL

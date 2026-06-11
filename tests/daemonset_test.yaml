@@ -3,6 +3,7 @@ templates:
   - daemonset.yaml
 set:
   kagent.companyId: "12345"
+  kagent.provisioningToken: "test-token"
   deploymentType: daemonset
   persistence.type: hostPath
   persistence.keypair.type: hostPath
@@ -84,3 +85,14 @@ tests:
           content:
             name: K_COMPANY_ID
             value: "12345"
+
+  - it: should inject K_REGISTER_PROVISIONING_TOKEN via secretKeyRef
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: K_REGISTER_PROVISIONING_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: RELEASE-NAME-kagent-provisioning-token
+                key: token

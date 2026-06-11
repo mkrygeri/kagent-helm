@@ -40,12 +40,17 @@
     },
     "kagent": {
       "type": "object",
-      "required": ["companyId"],
+      "required": ["companyId", "provisioningToken"],
       "properties": {
         "companyId": {
           "type": "string",
           "minLength": 1,
           "description": "Kentik company identifier for agent scoping (REQUIRED)"
+        },
+        "provisioningToken": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Provisioning token for agent registration (REQUIRED)"
         },
         "agentId": {
           "type": "string",

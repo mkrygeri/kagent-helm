@@ -3,11 +3,18 @@ templates:
   - statefulset.yaml
 set:
   kagent.companyId: "12345"
+  kagent.provisioningToken: "test-token"
 
 tests:
   - it: should fail when companyId is empty
     set:
       kagent.companyId: ""
+    asserts:
+      - failedTemplate: {}
+
+  - it: should fail when provisioningToken is empty
+    set:
+      kagent.provisioningToken: ""
     asserts:
       - failedTemplate: {}
 
