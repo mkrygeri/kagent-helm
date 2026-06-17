@@ -7,6 +7,7 @@ A Helm chart for deploying Kentik Universal Agent (kagent) with support for mult
 - Kubernetes 1.20+
 - Helm 3.x
 - Kentik account with API access
+- A provisioning token (if you cloned this repo, see `./generate-provisioning-token.sh --help`)
 
 ## Quick Start
 
