@@ -3,6 +3,7 @@ templates:
   - configmap.yaml
 set:
   kagent.companyId: "12345"
+  kagent.provisioningToken: "test-token"
 
 tests:
   - it: should not render ConfigMap when disabled (default)

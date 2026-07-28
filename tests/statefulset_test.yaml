@@ -3,6 +3,7 @@ templates:
   - statefulset.yaml
 set:
   kagent.companyId: "12345"
+  kagent.provisioningToken: "test-token"
 
 tests:
   - it: should render a StatefulSet with default values
@@ -12,6 +13,17 @@ tests:
       - equal:
           path: spec.replicas
           value: 1
+
+  - it: should inject K_REGISTER_PROVISIONING_TOKEN via secretKeyRef
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: K_REGISTER_PROVISIONING_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: RELEASE-NAME-kagent-provisioning-token
+                key: token
 
   - it: should not include probes by default
     asserts:

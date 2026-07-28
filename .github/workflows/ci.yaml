@@ -18,13 +18,13 @@ jobs:
           version: v3.17.3
 
       - name: Helm lint (default values)
-        run: helm lint . --set-string kagent.companyId=test-company
+        run: helm lint . --set-string kagent.companyId=test-company --set-string kagent.provisioningToken=test-token
 
       - name: Helm lint (probes disabled)
-        run: helm lint . --set-string kagent.companyId=test-company --set livenessProbe.enabled=false --set readinessProbe.enabled=false
+        run: helm lint . --set-string kagent.companyId=test-company --set-string kagent.provisioningToken=test-token --set livenessProbe.enabled=false --set readinessProbe.enabled=false
 
       - name: Helm lint (probes absent)
-        run: helm lint . --set-string kagent.companyId=test-company --set livenessProbe=null --set readinessProbe=null
+        run: helm lint . --set-string kagent.companyId=test-company --set-string kagent.provisioningToken=test-token --set livenessProbe=null --set readinessProbe=null
 
   unittest:
     name: Unit Tests
@@ -56,21 +56,21 @@ jobs:
       matrix:
         scenario:
           - name: statefulset-defaults
-            args: "--set-string kagent.companyId=test-company"
+            args: "--set-string kagent.companyId=test-company --set-string kagent.provisioningToken=test-token"
           - name: statefulset-no-probes
-            args: "--set-string kagent.companyId=test-company --set livenessProbe=null --set readinessProbe=null"
+            args: "--set-string kagent.companyId=test-company --set-string kagent.provisioningToken=test-token --set livenessProbe=null --set readinessProbe=null"
           - name: statefulset-probes-disabled
-            args: "--set-string kagent.companyId=test-company --set livenessProbe.enabled=false --set readinessProbe.enabled=false"
+            args: "--set-string kagent.companyId=test-company --set-string kagent.provisioningToken=test-token --set livenessProbe.enabled=false --set readinessProbe.enabled=false"
           - name: daemonset-defaults
-            args: "--set-string kagent.companyId=test-company --set deploymentType=daemonset --set persistence.type=hostPath --set persistence.keypair.type=hostPath"
+            args: "--set-string kagent.companyId=test-company --set-string kagent.provisioningToken=test-token --set deploymentType=daemonset --set persistence.type=hostPath --set persistence.keypair.type=hostPath"
           - name: daemonset-no-probes
-            args: "--set-string kagent.companyId=test-company --set deploymentType=daemonset --set persistence.type=hostPath --set persistence.keypair.type=hostPath --set livenessProbe=null --set readinessProbe=null"
+            args: "--set-string kagent.companyId=test-company --set-string kagent.provisioningToken=test-token --set deploymentType=daemonset --set persistence.type=hostPath --set persistence.keypair.type=hostPath --set livenessProbe=null --set readinessProbe=null"
           - name: openshift-statefulset
-            args: "--set-string kagent.companyId=test-company --set openshift.enabled=true"
+            args: "--set-string kagent.companyId=test-company --set-string kagent.provisioningToken=test-token --set openshift.enabled=true"
           - name: openshift-custom-scc
-            args: "--set-string kagent.companyId=test-company --set openshift.enabled=true --set openshift.restrictedSecurityContext=false --set openshift.securityContextConstraints.create=true"
+            args: "--set-string kagent.companyId=test-company --set-string kagent.provisioningToken=test-token --set openshift.enabled=true --set openshift.restrictedSecurityContext=false --set openshift.securityContextConstraints.create=true"
           - name: kproxy-loadbalancer
-            args: "-f docs/kproxy-loadbalancer-values.yaml --set-string kagent.companyId=test-company"
+            args: "-f docs/kproxy-loadbalancer-values.yaml --set-string kagent.companyId=test-company --set-string kagent.provisioningToken=test-token"
     steps:
       - uses: actions/checkout@v4
 

@@ -4,6 +4,7 @@ templates:
   - daemonset.yaml
 set:
   kagent.companyId: "12345"
+  kagent.provisioningToken: "test-token"
 
 tests:
   - it: should not render Service when disabled by default for daemonset

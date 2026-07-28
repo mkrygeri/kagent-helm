@@ -55,12 +55,21 @@
     },
     "kagent": {
       "type": "object",
-      "required": ["companyId"],
+      "required": ["companyId", "provisioningToken"],
       "properties": {
         "companyId": {
           "type": "string",
           "minLength": 1,
           "description": "Kentik company identifier for agent scoping (REQUIRED)"
+        },
+        "provisioningToken": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Provisioning token for agent registration (REQUIRED)"
+        },
+        "agentId": {
+          "type": "string",
+          "description": "Agent ID from CreateAgent API for Terraform tracking (optional)"
         },
         "apiEndpoint": {
           "type": "string",
@@ -125,7 +134,7 @@
               "description": "Amount of disk space to reserve (K_DISK_SPACE_RESERVATION_INITIAL_SIZE)"
             }
           }
-        },
+        }
       }
     },
     "serviceAccount": {
