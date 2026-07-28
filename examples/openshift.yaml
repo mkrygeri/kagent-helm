@@ -1,0 +1,12 @@
+openshift:
+  enabled: true
+
+kagent:
+  companyId: 1111111
+
+persistence:
+  enabled: true
+  type: pvc
+  keypair:
+    enabled: true
+    type: secret

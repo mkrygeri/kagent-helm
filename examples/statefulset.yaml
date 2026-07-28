@@ -1,0 +1,28 @@
+deploymentType: statefulset
+
+# Number of StatefulSet replicas (each gets its own PVC and keypair)
+replicaCount: 1
+
+kagent:
+  # Maps to env K_COMPANY_ID
+  companyId: 1111111
+  # Maps to env K_REGISTER_PROVISIONING_TOKEN (injected via Secret)
+  provisioningToken: "your-provisioning-token"
+
+persistence:
+  enabled: true
+  type: pvc
+
+  pvc:
+    # Storage class name (empty string uses cluster default)
+    storageClass: ""
+    # Volume size for application data
+    size: 10Gi
+    accessModes:
+      - ReadWriteOnce
+
+  keypair:
+    enabled: true
+    # Store the keypair in a Kubernetes Secret (recommended).
+    # Generate secrets with generate-secrets.sh before deploying.
+    type: secret
