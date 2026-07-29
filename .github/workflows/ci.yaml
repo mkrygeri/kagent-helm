@@ -80,3 +80,23 @@ jobs:
 
       - name: "Template render: ${{ matrix.scenario.name }}"
         run: helm template test-release . ${{ matrix.scenario.args }}
+
+  package:
+    name: Package Chart
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.17.3
+
+      - name: Package chart (build validation)
+        run: helm package . --destination dist
+
+      - name: Upload packaged chart
+        uses: actions/upload-artifact@v4
+        with:
+          name: helm-chart
+          path: dist/*.tgz
+

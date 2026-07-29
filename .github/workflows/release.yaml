@@ -1,0 +1,88 @@
+name: Release Chart
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Chart version to package and publish (defaults to Chart.yaml version)"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    name: Package And Publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.17.3
+
+      - name: Install helm-unittest plugin
+        run: helm plugin install https://github.com/helm-unittest/helm-unittest.git --version v1.0.3
+
+      - name: Lint
+        run: helm lint . --set-string kagent.companyId=test-company --set-string kagent.provisioningToken=test-token
+
+      - name: Unit tests
+        run: helm unittest .
+
+      - name: Determine chart version
+        id: version
+        run: |
+          CHART_VERSION="$(helm show chart . | awk '/^version:/ {print $2}')"
+          INPUT_VERSION="${{ github.event.inputs.version }}"
+          if [ -n "$INPUT_VERSION" ]; then
+            VERSION="$INPUT_VERSION"
+          elif [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION="$CHART_VERSION"
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Publishing chart version ${VERSION} (Chart.yaml declares ${CHART_VERSION})"
+          if [ "${GITHUB_REF_TYPE}" = "tag" ] && [ "${VERSION}" != "${CHART_VERSION}" ]; then
+            echo "::error::Git tag v${VERSION} does not match Chart.yaml version ${CHART_VERSION}. Bump the chart version before tagging."
+            exit 1
+          fi
+
+      - name: Package chart
+        run: helm package . --version "${{ steps.version.outputs.version }}" --destination dist
+
+      - name: Log in to GitHub Container Registry
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io \
+            --username "${{ github.actor }}" --password-stdin
+
+      - name: Push chart to GHCR
+        id: push
+        run: |
+          OWNER="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
+          helm push "dist/kagent-${{ steps.version.outputs.version }}.tgz" "oci://ghcr.io/${OWNER}"
+          echo "oci_ref=oci://ghcr.io/${OWNER}/kagent" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        if: github.event_name == 'push' && github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/kagent-${{ steps.version.outputs.version }}.tgz
+          generate_release_notes: true
+          body: |
+            Helm chart `kagent` version `${{ steps.version.outputs.version }}`.
+
+            Install from the OCI registry:
+
+            ```bash
+            helm install kagent ${{ steps.push.outputs.oci_ref }} \
+              --version ${{ steps.version.outputs.version }} \
+              --set-string kagent.companyId=YOUR_COMPANY_ID \
+              --set-string kagent.provisioningToken=YOUR_PROVISIONING_TOKEN
+            ```

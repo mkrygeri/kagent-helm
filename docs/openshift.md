@@ -21,8 +21,9 @@ The recommended OpenShift install uses a StatefulSet, PVC storage, and Secret-ba
 ```bash
 oc new-project kentik-kagent
 
-helm install kagent oci://ghcr.io/kentik/kagent-helm \
+helm install kagent oci://ghcr.io/kentik/kagent \
   --set-string kagent.companyId=YOUR_COMPANY_ID \
+  --set-string kagent.provisioningToken=YOUR_PROVISIONING_TOKEN \
   --set openshift.enabled=true
 ```
 

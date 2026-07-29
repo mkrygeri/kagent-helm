@@ -24,19 +24,25 @@ helm install kagent . \
   --set-string kagent.provisioningToken=YOUR_PROVISIONING_TOKEN
 ```
 
-Alternatively, install directly from the GitHub repository without cloning:
+Alternatively, install directly from the published OCI chart without cloning:
 
 ```bash
-# Install with StatefulSet pattern
-helm install kagent oci://ghcr.io/kentik/kagent-helm \
+# Install the latest published chart from the GitHub Container Registry
+helm install kagent oci://ghcr.io/kentik/kagent \
   --set-string kagent.companyId=YOUR_COMPANY_ID \
   --set-string kagent.provisioningToken=YOUR_PROVISIONING_TOKEN
 
-# Or from a specific version/tag
-helm install kagent https://github.com/kentik/kagent-helm/archive/refs/heads/main.tar.gz \
+# Or pin a specific chart version
+helm install kagent oci://ghcr.io/kentik/kagent \
+  --version 1.1.0 \
   --set-string kagent.companyId=YOUR_COMPANY_ID \
   --set-string kagent.provisioningToken=YOUR_PROVISIONING_TOKEN
 ```
+
+> The chart is packaged and published to `oci://ghcr.io/<owner>/kagent` by the
+> [Release workflow](.github/workflows/release.yaml) whenever a `v*.*.*` tag is pushed.
+> Forks publish under their own owner (for example `oci://ghcr.io/mkrygeri/kagent`).
+
 
 ### 2. Verify Installation
 
