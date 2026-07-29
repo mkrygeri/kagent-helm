@@ -95,6 +95,8 @@ This feature requires `deploymentType=statefulset` with `persistence.keypair.typ
 
 Some kagent capabilities need Linux capabilities such as `NET_RAW`. DaemonSet deployments that use `hostPath` also need an SCC that allows host directory volumes. These permissions are not available under the default restricted SCC.
 
+See the [Linux capabilities guide](capabilities.md) for the full per-capability reference of which UA capabilities require which Linux capabilities.
+
 If your OpenShift administrator wants this chart to create and bind a custom SCC, enable it explicitly:
 
 ```yaml

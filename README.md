@@ -264,6 +264,12 @@ See [docs/kproxy-loadbalancer-values.yaml](docs/kproxy-loadbalancer-values.yaml)
 | `rbac.create` | Create RBAC resources | `false` |
 | `networkPolicy.enabled` | Enable network policy | `false` |
 
+kagent itself needs no special Linux capabilities. Individual Universal Agent capabilities
+(flow, SNMP, synthetics, syslog, etc.) may each require specific capabilities under
+`securityContext.capabilities.add`. See the [Linux capabilities guide](docs/capabilities.md)
+for the full per-capability reference.
+
+
 ### Health Checks And Services
 
 | Parameter | Description | Default |

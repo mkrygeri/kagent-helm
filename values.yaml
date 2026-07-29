@@ -165,16 +165,19 @@ podSecurityContext:
 
 # Container security context
 #
-# Some Universal Agent capabilities require specific Linux capabilities to function
-# correctly. By default, all capabilities are dropped and only the required ones are
-# added back. If you are not using certain UA capabilities, you can remove the
-# corresponding Linux capabilities from the 'add' list to follow the principle of
-# least privilege.
+# kagent itself needs no special Linux capabilities. Individual Universal Agent (UA)
+# capabilities may each require one or more Linux capabilities to be added back. By default
+# all capabilities are dropped and only NET_RAW is added (covers the default NMS use case).
+# Add only what the UA capabilities you actually run require, following the principle of
+# least privilege. See docs/capabilities.md for the full reference.
 #
-# Linux capabilities mapped to Universal Agent capabilities:
-#   NET_ADMIN        - kdns (network administration operations)
-#   NET_BIND_SERVICE - kbgp, kproxy (bind to privileged ports below 1024)
-#   NET_RAW          - ranger/nms,ksynth,livesynth (raw sockets for packet capture)
+# Linux capabilities required per UA capability (add to capabilities.add):
+#   NET_RAW          - ktraffic, kdns, ranger/nms, ksynth, livesynth (raw sockets / capture)
+#   NET_BIND_SERVICE - ksyslog (514), ksnmptrap (162); kproxy/kbgp only if bound to a port <1024
+#   SYS_CHROOT       - livesynth (connectivity test)
+#   SETUID, SETGID   - livesynth (connectivity test)
+#
+# Needs no added capabilities: kptr, ksqueegee, and kproxy/kbgp on their default (>1024) ports.
 
 securityContext:
   allowPrivilegeEscalation: false

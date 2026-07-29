@@ -1,0 +1,7 @@
+{
+  "//": "Helm chart templates use Go templating ({{ ... }}) and are not valid plain YAML. Treat them as Helm so the YAML validator does not report false-positive syntax errors. Install a Helm extension (e.g. Tim-Koehler.helm-intellisense) for full language support.",
+  "files.associations": {
+    "**/templates/*.yaml": "helm",
+    "**/templates/*.tpl": "helm"
+  }
+}
