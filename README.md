@@ -212,6 +212,7 @@ See [docs/kproxy-loadbalancer-values.yaml](docs/kproxy-loadbalancer-values.yaml)
 | `kagent.logDest` | Log destination (stdout, stderr, discard, filename) | `stdout` |
 | `kagent.logLevel` | Log level (debug, info, warn, error) | `info` |
 | `kagent.apiEndpoint` | Kentik API endpoint | `grpc.api.kentik.com:443` |
+| `kagent.machineId.enabled` | Provide a stable, identity-scoped `/etc/machine-id` (32 lowercase hex chars) derived from the pod keypair instead of the host machine-id. Requires `deploymentType=statefulset` with `persistence.keypair.type=secret`. Recommended for OpenShift. | `false` |
 
 ### Deployment Configuration
 

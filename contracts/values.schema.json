@@ -119,6 +119,16 @@
             }
           }
         },
+        "machineId": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false,
+              "description": "Provide a stable, identity-scoped /etc/machine-id (32 lowercase hex chars) derived from the pod keypair instead of the host machine-id. Requires deploymentType=statefulset with persistence.keypair.type=secret. Recommended for OpenShift."
+            }
+          }
+        },
         "diskReservation": {
           "type": "object",
           "properties": {

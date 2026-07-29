@@ -40,12 +40,29 @@ spec:
           else
             echo "Warning: No keypair found for pod-${POD_INDEX}"
           fi
+          {{- if include "kagent.machineIdEnabled" . }}
+          # Provide a stable, identity-scoped /etc/machine-id.
+          # Format matches a real Linux machine-id: 32 lowercase hex chars + newline.
+          # Derived from the pod's public key so it is unique per agent identity
+          # (even for two pods on the same node) and stable across restarts.
+          if [ -f /opt/ua/keys/public_key.pem ]; then
+            md5sum /opt/ua/keys/public_key.pem | cut -c1-32 > /etc/kentik-machine-id/machine-id
+          else
+            # Pre-provisioning fallback: 128-bit random value, same format.
+            { head -c 16 /dev/urandom | od -An -tx1 | tr -d ' \n'; echo; } > /etc/kentik-machine-id/machine-id
+          fi
+          echo "machine-id: $(cat /etc/kentik-machine-id/machine-id)"
+          {{- end }}
         volumeMounts:
         - name: keypair-secrets-projected
           mountPath: /secrets
           readOnly: true
         - name: keypair-secret
           mountPath: /opt/ua/keys
+        {{- if include "kagent.machineIdEnabled" . }}
+        - name: machine-id
+          mountPath: /etc/kentik-machine-id
+        {{- end }}
       volumes:
       - name: keypair-secrets-projected
         projected:
@@ -63,6 +80,10 @@ spec:
           {{- end }}
       - name: keypair-secret
         emptyDir: {}
+      {{- if include "kagent.machineIdEnabled" . }}
+      - name: machine-id
+        emptyDir: {}
+      {{- end }}
       {{- end }}
   {{- if .Values.persistence.enabled }}
   volumeClaimTemplates:

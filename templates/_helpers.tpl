@@ -278,6 +278,18 @@ volumes:
 {{- end }}
 
 {{/*
+Machine ID feature gate.
+Renders "true" only when a stable, identity-scoped /etc/machine-id can be
+provided: StatefulSet workload with a Secret-backed keypair (the identity),
+where the setup-keypair init container generates the machine-id.
+*/}}
+{{- define "kagent.machineIdEnabled" -}}
+{{- if and (.Values.kagent.machineId | default dict).enabled (eq .Values.deploymentType "statefulset") .Values.persistence.keypair.enabled (eq .Values.persistence.keypair.type "secret") -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
 Volume mounts shared across deployment patterns
 */}}
 {{- define "kagent.volumeMounts" -}}
@@ -297,6 +309,12 @@ volumeMounts:
 - name: data
   mountPath: /opt/ua/keys
   subPath: keys
+{{- end }}
+{{- if include "kagent.machineIdEnabled" . }}
+- name: machine-id
+  mountPath: /etc/machine-id
+  subPath: machine-id
+  readOnly: true
 {{- end }}
 {{- end }}
 

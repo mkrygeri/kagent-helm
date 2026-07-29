@@ -69,6 +69,28 @@ It also sets `podSecurityContext.seccompProfile.type=RuntimeDefault`.
 
 Use this mode when deploying under OpenShift's default restricted SCCs.
 
+## Machine ID / Host Identity
+
+kagent uses a machine identifier to anchor its identity. On a normal host this comes from `/etc/machine-id`, but on OpenShift that path cannot be mounted from the host (hostPath is blocked by the restricted SCC), and on a shared node it would be identical for every pod on that node.
+
+Enable `kagent.machineId.enabled=true` to have the chart provide a stable, per-identity `/etc/machine-id` instead:
+
+```yaml
+kagent:
+  companyId: YOUR_COMPANY_ID
+  machineId:
+    enabled: true
+```
+
+When enabled, the `setup-keypair` init container derives the machine-id from the pod's own public key and mounts it at `/etc/machine-id`. The result:
+
+- Uses the standard Linux format: 32 lowercase hexadecimal characters.
+- Is **unique per agent identity**, so two pods on the same node do not collide.
+- Is **stable across restarts**, because it is derived from the pod's persistent keypair.
+- Requires **no hostPath and no custom SCC** — it works under the default `restricted-v2` SCC.
+
+This feature requires `deploymentType=statefulset` with `persistence.keypair.type=secret` (the recommended OpenShift identity model) and is ignored for other configurations. See [examples/openshift.yaml](../examples/openshift.yaml).
+
 ## Capabilities And HostPath
 
 Some kagent capabilities need Linux capabilities such as `NET_RAW`. DaemonSet deployments that use `hostPath` also need an SCC that allows host directory volumes. These permissions are not available under the default restricted SCC.

@@ -180,3 +180,47 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].readinessProbe.initialDelaySeconds
           value: 5
+
+  - it: should not mount /etc/machine-id by default
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: machine-id
+            mountPath: /etc/machine-id
+            subPath: machine-id
+            readOnly: true
+
+  - it: should provide an identity-scoped /etc/machine-id when machineId is enabled
+    set:
+      kagent.machineId.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: machine-id
+            mountPath: /etc/machine-id
+            subPath: machine-id
+            readOnly: true
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: machine-id
+            emptyDir: {}
+      - matchRegex:
+          path: spec.template.spec.initContainers[0].command[2]
+          pattern: "md5sum /opt/ua/keys/public_key.pem \\| cut -c1-32"
+
+  - it: should ignore machineId when keypair is not a Secret
+    set:
+      kagent.machineId.enabled: true
+      persistence.keypair.type: pvc
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: machine-id
+            mountPath: /etc/machine-id
+            subPath: machine-id
+            readOnly: true
+

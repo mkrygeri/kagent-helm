@@ -82,6 +82,21 @@ kagent:
     port: 8099
     address: ""                 # K_HC_SERVER_ADDRESS; empty renders as :<port>
 
+  # Identity-scoped machine ID.
+  # Provides a stable /etc/machine-id to the container instead of relying on the
+  # host's /etc/machine-id (which requires a hostPath mount and is shared by all
+  # pods on a node). When enabled, the setup-keypair init container generates a
+  # machine-id derived from the pod's public key: 32 lowercase hex characters in
+  # the standard Linux /etc/machine-id format, unique per agent identity (even
+  # for co-located pods) and stable across restarts.
+  #
+  # Requirements: deploymentType=statefulset with persistence.keypair.type=secret
+  # (the default OpenShift-recommended identity model). Ignored otherwise.
+  # Recommended for OpenShift, where mounting the host /etc/machine-id via
+  # hostPath is blocked by the restricted SCC.
+  machineId:
+    enabled: false
+
 # Service account configuration
 serviceAccount:
   create: true
