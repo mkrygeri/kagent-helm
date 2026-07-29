@@ -34,7 +34,7 @@ helm install kagent oci://ghcr.io/kentik/kagent \
 
 # Or pin a specific chart version
 helm install kagent oci://ghcr.io/kentik/kagent \
-  --version 1.1.0 \
+  --version 1.2.0 \
   --set-string kagent.companyId=YOUR_COMPANY_ID \
   --set-string kagent.provisioningToken=YOUR_PROVISIONING_TOKEN
 ```
