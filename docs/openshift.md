@@ -72,9 +72,31 @@ Use this mode when deploying under OpenShift's default restricted SCCs.
 
 ## Machine ID / Host Identity
 
-kagent uses a machine identifier to anchor its identity. On a normal host this comes from `/etc/machine-id`, but on OpenShift that path cannot be mounted from the host (hostPath is blocked by the restricted SCC), and on a shared node it would be identical for every pod on that node.
+### Why kagent needs a machine ID
 
-Enable `kagent.machineId.enabled=true` to have the chart provide a stable, per-identity `/etc/machine-id` instead:
+kagent uses a machine identifier to anchor its identity. On a normal Linux host this value
+comes from `/etc/machine-id`, a 128-bit ID (32 lowercase hexadecimal characters) that is stable
+for the life of the host. kagent expects this file to be present and stable so that a restarted
+agent is recognized as the same agent rather than a brand-new one.
+
+### The problem on OpenShift
+
+Containers do not automatically inherit a usable `/etc/machine-id`, and on OpenShift the two
+usual workarounds do not apply:
+
+- **Mounting the host's `/etc/machine-id` is blocked.** `hostPath` volumes are not permitted by
+  the default `restricted-v2` SCC, so the container cannot read the node's machine-id.
+- **Sharing the node's machine-id would collide.** Even if it were mountable, every pod scheduled
+  to the same node would present an identical machine-id, so multiple agents could not be told
+  apart.
+
+The result without this feature is either a missing/unstable machine-id or a value shared across
+pods — both of which undermine per-agent identity.
+
+### How the chart solves it
+
+Set `kagent.machineId.enabled=true` to have the chart generate a stable, **identity-scoped**
+`/etc/machine-id` for each pod:
 
 ```yaml
 kagent:
@@ -83,14 +105,77 @@ kagent:
     enabled: true
 ```
 
-When enabled, the `setup-keypair` init container derives the machine-id from the pod's own public key and mounts it at `/etc/machine-id`. The result:
+The machine-id is derived from the pod's own keypair, which is the agent's identity on OpenShift
+(see [Standard Install](#standard-install)). The resulting value:
 
-- Uses the standard Linux format: 32 lowercase hexadecimal characters.
-- Is **unique per agent identity**, so two pods on the same node do not collide.
-- Is **stable across restarts**, because it is derived from the pod's persistent keypair.
-- Requires **no hostPath and no custom SCC** — it works under the default `restricted-v2` SCC.
+- Uses the **standard Linux format**: 32 lowercase hexadecimal characters followed by a newline.
+- Is **unique per agent identity**, so two pods on the same node never collide.
+- Is **stable across restarts and rescheduling**, because it is derived from the pod's persistent,
+  Secret-backed keypair rather than from anything on the node.
+- Requires **no `hostPath` and no custom SCC** — it works under the default `restricted-v2` SCC.
 
-This feature requires `deploymentType=statefulset` with `persistence.keypair.type=secret` (the recommended OpenShift identity model) and is ignored for other configurations. See [examples/openshift.yaml](../examples/openshift.yaml).
+### How it works internally
+
+The feature is implemented entirely in the pod spec; nothing runs privileged and nothing touches
+the node. When enabled:
+
+1. The `setup-keypair` **init container** (which already stages the per-replica keypair) also
+   writes the machine-id to a shared `emptyDir` volume at `/etc/kentik-machine-id/machine-id`:
+   - **Normal case** — derived deterministically from the public key:
+     `md5sum /opt/ua/keys/public_key.pem | cut -c1-32`. An MD5 digest is exactly 128 bits, so
+     taking its 32 hex characters yields a value in the correct machine-id format that is a stable
+     function of the identity.
+   - **Pre-provisioning fallback** — if the keypair is not yet present, a 128-bit random value is
+     written in the same format
+     (`head -c 16 /dev/urandom | od -An -tx1 | tr -d ' \n'`). Once the keypair exists on a later
+     start, the deterministic value takes over.
+2. The **main kagent container** mounts that file read-only at `/etc/machine-id` using a `subPath`,
+   so the container sees a normal `/etc/machine-id` without any host access.
+
+Volume flow:
+
+```
+init: setup-keypair ──writes──▶ emptyDir "machine-id"  (/etc/kentik-machine-id/machine-id)
+                                        │
+main: kagent  ──mounts read-only──▶ /etc/machine-id (subPath: machine-id)
+```
+
+### Requirements and scope
+
+This feature only renders when **all** of the following hold, matching the recommended OpenShift
+identity model:
+
+- `deploymentType: statefulset`
+- `persistence.keypair.enabled: true`
+- `persistence.keypair.type: secret`
+
+For any other configuration (for example DaemonSet, or a `hostPath`/`pvc` keypair) the
+`kagent.machineId.enabled` flag is **ignored** and no `/etc/machine-id` is mounted. The setting is
+opt-in and defaults to `false`, so it never changes existing deployments unless you enable it.
+See [examples/openshift.yaml](../examples/openshift.yaml).
+
+### Verifying
+
+After the pod is running, confirm the file is present and correctly formatted:
+
+```bash
+oc exec -it <pod> -- cat /etc/machine-id
+# e.g. 3f2a1c9b7d4e5f6081a2b3c4d5e6f708
+
+# It should be 32 lowercase hex characters:
+oc exec -it <pod> -- sh -c 'grep -Eq "^[0-9a-f]{32}$" /etc/machine-id && echo valid'
+```
+
+Because it is a `subPath` mount of a read-only file, the value stays constant for the life of the
+pod. Two pods of the same StatefulSet return different values; the same pod returns the same value
+across restarts.
+
+> **Note:** This mounts a real `/etc/machine-id` file into the container. If a specific kagent
+> capability instead reads the machine ID through the systemd `sd_id128_get_machine()` kernel API
+> (rather than the file), a mounted file will not influence that path. If you are enabling this to
+> solve a specific identity issue, confirm with the Kentik agent team that the component in
+> question reads `/etc/machine-id` from disk.
+
 
 ## Capabilities And HostPath
 
