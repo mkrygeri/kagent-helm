@@ -316,6 +316,8 @@ volumeMounts:
   subPath: machine-id
   readOnly: true
 {{- end }}
+- name: tmp
+  mountPath: /tmp
 {{- end }}
 
 {{/*
@@ -323,6 +325,8 @@ Pod volumes for non-StatefulSet workloads
 */}}
 {{- define "kagent.podVolumes" -}}
 {{- if ne .Values.deploymentType "statefulset" }}
+- name: tmp
+  emptyDir: {}
 {{- /* Data volume configuration */ -}}
 {{- if .Values.persistence.enabled }}
 {{- if eq .Values.persistence.type "hostPath" }}

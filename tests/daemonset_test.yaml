@@ -78,6 +78,19 @@ tests:
       - isNull:
           path: spec.template.spec.containers[0].readinessProbe
 
+  - it: should always mount /tmp as emptyDir to allow supervisor socket creation
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: tmp
+            mountPath: /tmp
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: tmp
+            emptyDir: {}
+
   - it: should include K_COMPANY_ID env variable
     asserts:
       - contains:

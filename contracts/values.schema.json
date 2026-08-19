@@ -67,10 +67,6 @@
           "minLength": 1,
           "description": "Provisioning token for agent registration (REQUIRED)"
         },
-        "agentId": {
-          "type": "string",
-          "description": "Agent ID from CreateAgent API for Terraform tracking (optional)"
-        },
         "apiEndpoint": {
           "type": "string",
           "default": "grpc.api.kentik.com:443",
@@ -319,6 +315,14 @@
           "default": false,
           "description": "Enable liveness probe (opt-in)"
         },
+        "httpGet": {
+          "type": "object",
+          "description": "HTTP GET probe configuration",
+          "properties": {
+            "path": {"type": "string", "default": "/hc", "description": "HTTP path for probe"},
+            "port": {"type": "integer", "default": 8099, "description": "Port for probe; must match kagent.healthCheck.port"}
+          }
+        },
         "initialDelaySeconds": {"type": "integer", "default": 30},
         "periodSeconds": {"type": "integer", "default": 10},
         "timeoutSeconds": {"type": "integer", "default": 5},
@@ -332,6 +336,14 @@
           "type": "boolean",
           "default": false,
           "description": "Enable readiness probe (auto-enabled if healthCheck.enabled=true)"
+        },
+        "httpGet": {
+          "type": "object",
+          "description": "HTTP GET probe configuration",
+          "properties": {
+            "path": {"type": "string", "default": "/hc", "description": "HTTP path for probe"},
+            "port": {"type": "integer", "default": 8099, "description": "Port for probe; must match kagent.healthCheck.port"}
+          }
         },
         "initialDelaySeconds": {"type": "integer", "default": 5},
         "periodSeconds": {"type": "integer", "default": 10},

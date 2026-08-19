@@ -63,7 +63,11 @@ spec:
         - name: machine-id
           mountPath: /etc/kentik-machine-id
         {{- end }}
+      {{- end }}
       volumes:
+      - name: tmp
+        emptyDir: {}
+      {{- if and .Values.persistence.keypair.enabled (eq .Values.persistence.keypair.type "secret") }}
       - name: keypair-secrets-projected
         projected:
           defaultMode: 0400
