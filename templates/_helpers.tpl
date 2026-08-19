@@ -90,6 +90,18 @@ Validate all chart configuration
 {{- if lt (int .Values.replicaCount) 1 }}
 {{- fail (printf "replicaCount must be at least 1 for deploymentType '%s', got: %d" .Values.deploymentType (int .Values.replicaCount)) }}
 {{- end }}
+{{- /* StatefulSet storage is PVC-backed via volumeClaimTemplates; other types render an undefined volume */ -}}
+{{- if not .Values.persistence.enabled }}
+{{- fail "StatefulSet deployments require persistence.enabled=true (storage is provisioned via volumeClaimTemplates). To run without persistent storage, use deploymentType=daemonset with persistence.type=emptyDir." }}
+{{- end }}
+{{- if ne .Values.persistence.type "pvc" }}
+{{- fail (printf "StatefulSet deployments only support 'pvc' for persistence.type, got: '%s'. Storage is provisioned via volumeClaimTemplates." .Values.persistence.type) }}
+{{- end }}
+{{- if .Values.persistence.keypair.enabled }}
+{{- if and (ne .Values.persistence.keypair.type "secret") (ne .Values.persistence.keypair.type "pvc") }}
+{{- fail (printf "StatefulSet deployments only support 'secret' or 'pvc' for persistence.keypair.type, got: '%s'." .Values.persistence.keypair.type) }}
+{{- end }}
+{{- end }}
 {{- end }}
 {{- /* Validate persistence type for daemonset */ -}}
 {{- if eq .Values.deploymentType "daemonset" }}

@@ -24,3 +24,38 @@ tests:
     asserts:
       - hasDocuments:
           count: 0
+
+  - it: should fail when persistence is disabled for a StatefulSet
+    set:
+      persistence.enabled: false
+    asserts:
+      - failedTemplate:
+          errorMessage: "StatefulSet deployments require persistence.enabled=true (storage is provisioned via volumeClaimTemplates). To run without persistent storage, use deploymentType=daemonset with persistence.type=emptyDir."
+
+  - it: should fail when persistence.type is not pvc for a StatefulSet
+    set:
+      persistence.type: hostPath
+    asserts:
+      - failedTemplate:
+          errorMessage: "StatefulSet deployments only support 'pvc' for persistence.type, got: 'hostPath'. Storage is provisioned via volumeClaimTemplates."
+
+  - it: should fail when keypair.type is hostPath for a StatefulSet
+    set:
+      persistence.keypair.type: hostPath
+    asserts:
+      - failedTemplate:
+          errorMessage: "StatefulSet deployments only support 'secret' or 'pvc' for persistence.keypair.type, got: 'hostPath'."
+
+  - it: should fail when keypair.type is emptyDir for a StatefulSet
+    set:
+      persistence.keypair.type: emptyDir
+    asserts:
+      - failedTemplate:
+          errorMessage: "StatefulSet deployments only support 'secret' or 'pvc' for persistence.keypair.type, got: 'emptyDir'."
+
+  - it: should allow pvc keypair for a StatefulSet
+    set:
+      persistence.keypair.type: pvc
+    asserts:
+      - isKind:
+          of: StatefulSet
