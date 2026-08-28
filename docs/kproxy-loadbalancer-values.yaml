@@ -16,14 +16,18 @@ service:
   type: LoadBalancer
   externalTrafficPolicy: Local
   ports:
-    - name: health
-      port: 8099
-      targetPort: health
-      protocol: TCP
     - name: netflow
       port: 9995
       targetPort: netflow
       protocol: UDP
+  healthService:
+    enabled: true
+    type: ClusterIP
+    ports:
+      - name: health
+        port: 8099
+        targetPort: health
+        protocol: TCP
 
 persistence:
   enabled: true
