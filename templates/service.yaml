@@ -1,5 +1,7 @@
-{{- if .Values.service.enabled }}
+{{- if or .Values.service.enabled .Values.service.healthService.enabled }}
 {{- include "kagent.validate" . }}
+{{- end }}
+{{- if .Values.service.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -47,4 +49,36 @@ spec:
     {{- include "kagent.selectorLabels" . | nindent 4 }}
   ports:
     {{- toYaml .Values.service.ports | nindent 4 }}
+{{- end }}
+{{- if .Values.service.healthService.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "kagent.fullname" . }}-health
+  labels:
+    {{- include "kagent.labels" . | nindent 4 }}
+    {{- with .Values.service.healthService.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.service.healthService.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.service.healthService.type }}
+  {{- if and .Values.service.healthService.externalTrafficPolicy (or (eq .Values.service.healthService.type "LoadBalancer") (eq .Values.service.healthService.type "NodePort")) }}
+  externalTrafficPolicy: {{ .Values.service.healthService.externalTrafficPolicy }}
+  {{- end }}
+  {{- with .Values.service.healthService.loadBalancerIP }}
+  loadBalancerIP: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.service.healthService.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  selector:
+    {{- include "kagent.selectorLabels" . | nindent 4 }}
+  ports:
+    {{- toYaml .Values.service.healthService.ports | nindent 4 }}
 {{- end }}

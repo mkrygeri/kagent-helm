@@ -223,6 +223,21 @@ service:
       port: 8099
       targetPort: health
       protocol: TCP
+  # Optional dedicated Service for TCP health checks when UDP intake must be
+  # exposed through a separate Service due to mixed-protocol LB limitations.
+  healthService:
+    enabled: false
+    type: ClusterIP
+    annotations: {}
+    labels: {}
+    externalTrafficPolicy: ""
+    loadBalancerIP: ""
+    loadBalancerSourceRanges: []
+    ports:
+      - name: health
+        port: 8099
+        targetPort: health
+        protocol: TCP
 
 # Node selector
 nodeSelector: {}

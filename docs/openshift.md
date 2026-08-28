@@ -257,7 +257,7 @@ service:
       protocol: UDP
 ```
 
-For DaemonSet intake, `externalTrafficPolicy: Local` is usually preferred because it keeps load-balanced traffic on nodes running a local kagent pod and can preserve source IP information when the platform supports it. Some load balancer implementations have limitations around mixed TCP and UDP listeners on the same Service; if that applies in your environment, create separate Services using the same selector, one for UDP intake and one for TCP health checks.
+For DaemonSet intake, `externalTrafficPolicy: Local` is usually preferred because it keeps load-balanced traffic on nodes running a local kagent pod and can preserve source IP information when the platform supports it. Some load balancer implementations have limitations around mixed TCP and UDP listeners on the same Service; if that applies in your environment, set `service.ports` to UDP intake only and enable `service.healthService` for a dedicated TCP health-check Service.
 
 ## Uninstall
 

@@ -195,6 +195,28 @@ service:
 
 See [docs/kproxy-loadbalancer-values.yaml](docs/kproxy-loadbalancer-values.yaml) for a complete starting point.
 
+If your load balancer cannot attach both TCP and UDP listeners to one Service, configure the intake Service with only UDP ports and enable a separate TCP health Service:
+
+```yaml
+service:
+  enabled: true
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  ports:
+    - name: netflow
+      port: 9995
+      targetPort: netflow
+      protocol: UDP
+  healthService:
+    enabled: true
+    type: ClusterIP
+    ports:
+      - name: health
+        port: 8099
+        targetPort: health
+        protocol: TCP
+```
+
 ### Choosing A Load Balancer Pattern
 
 **StatefulSet** is best when kagent primarily needs durable identity and storage. A single LoadBalancer Service can distribute UDP across replicas, but the external load balancer sees the Kubernetes Service as one backend set. Use this when per-node intake is not required.
@@ -292,6 +314,13 @@ for the full per-capability reference.
 | `service.loadBalancerIP` | Static load balancer IP, when supported | `""` |
 | `service.loadBalancerSourceRanges` | Allowed source CIDRs for the load balancer | `[]` |
 | `service.ports` | Service ports for TCP health checks and UDP intake | health TCP 8099 |
+| `service.healthService.enabled` | Create a dedicated health-check Service | `false` |
+| `service.healthService.type` | Dedicated health Service type | `ClusterIP` |
+| `service.healthService.annotations` | Dedicated health Service annotations | `{}` |
+| `service.healthService.externalTrafficPolicy` | External traffic policy for health `NodePort`/`LoadBalancer` | `""` |
+| `service.healthService.loadBalancerIP` | Static load balancer IP for health Service | `""` |
+| `service.healthService.loadBalancerSourceRanges` | Allowed source CIDRs for health Service LB | `[]` |
+| `service.healthService.ports` | Ports for dedicated health Service | health TCP 8099 |
 
 ### OpenShift
 

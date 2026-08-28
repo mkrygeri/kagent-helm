@@ -509,6 +509,73 @@
               "appProtocol": {"type": "string"}
             }
           }
+        },
+        "healthService": {
+          "type": "object",
+          "description": "Optional dedicated Service for TCP health checks when intake traffic uses a separate Service",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false,
+              "description": "Enable dedicated health Service resource"
+            },
+            "type": {
+              "type": "string",
+              "enum": ["ClusterIP", "NodePort", "LoadBalancer"],
+              "default": "ClusterIP"
+            },
+            "annotations": {
+              "type": "object",
+              "additionalProperties": {"type": "string"},
+              "description": "Annotations for the health Service resource"
+            },
+            "labels": {
+              "type": "object",
+              "additionalProperties": {"type": "string"},
+              "description": "Additional labels for the health Service resource"
+            },
+            "externalTrafficPolicy": {
+              "type": "string",
+              "enum": ["", "Cluster", "Local"],
+              "default": "",
+              "description": "External traffic policy for NodePort or LoadBalancer health services"
+            },
+            "loadBalancerIP": {
+              "type": "string",
+              "default": "",
+              "description": "Static load balancer IP for the health service, when supported by the platform"
+            },
+            "loadBalancerSourceRanges": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description": "CIDR ranges allowed to access the health service load balancer"
+            },
+            "ports": {
+              "type": "array",
+              "description": "Health service ports, typically TCP health checks",
+              "items": {
+                "type": "object",
+                "required": ["name", "port", "targetPort"],
+                "properties": {
+                  "name": {"type": "string"},
+                  "port": {"type": "integer"},
+                  "targetPort": {
+                    "oneOf": [
+                      {"type": "string"},
+                      {"type": "integer"}
+                    ]
+                  },
+                  "protocol": {
+                    "type": "string",
+                    "enum": ["TCP", "UDP", "SCTP"],
+                    "default": "TCP"
+                  },
+                  "nodePort": {"type": "integer"},
+                  "appProtocol": {"type": "string"}
+                }
+              }
+            }
+          }
         }
       }
     }

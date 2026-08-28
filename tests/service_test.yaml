@@ -59,6 +59,55 @@ tests:
             targetPort: netflow
             protocol: UDP
 
+  - it: should render separate UDP intake and TCP health services when healthService is enabled
+    template: service.yaml
+    set:
+      deploymentType: daemonset
+      persistence.type: hostPath
+      persistence.keypair.type: hostPath
+      service.enabled: true
+      service.type: LoadBalancer
+      service.externalTrafficPolicy: Local
+      service.ports:
+        - name: netflow
+          port: 9995
+          targetPort: netflow
+          protocol: UDP
+      service.healthService.enabled: true
+      service.healthService.type: ClusterIP
+      service.healthService.ports:
+        - name: health
+          port: 8099
+          targetPort: health
+          protocol: TCP
+    asserts:
+      - hasDocuments:
+          count: 2
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-kagent
+        documentIndex: 0
+      - equal:
+          path: spec.type
+          value: LoadBalancer
+        documentIndex: 0
+      - equal:
+          path: spec.ports[0].protocol
+          value: UDP
+        documentIndex: 0
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-kagent-health
+        documentIndex: 1
+      - equal:
+          path: spec.type
+          value: ClusterIP
+        documentIndex: 1
+      - equal:
+          path: spec.ports[0].protocol
+          value: TCP
+        documentIndex: 1
+
   - it: should expose health and UDP container ports for kproxy load balancer use
     template: daemonset.yaml
     set:
