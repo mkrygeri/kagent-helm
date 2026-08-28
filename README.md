@@ -317,6 +317,7 @@ for the full per-capability reference.
 | `service.healthService.enabled` | Create a dedicated health-check Service | `false` |
 | `service.healthService.type` | Dedicated health Service type | `ClusterIP` |
 | `service.healthService.annotations` | Dedicated health Service annotations | `{}` |
+| `service.healthService.labels` | Dedicated health Service labels | `{}` |
 | `service.healthService.externalTrafficPolicy` | External traffic policy for health `NodePort`/`LoadBalancer` | `""` |
 | `service.healthService.loadBalancerIP` | Static load balancer IP for health Service | `""` |
 | `service.healthService.loadBalancerSourceRanges` | Allowed source CIDRs for health Service LB | `[]` |
